@@ -94,11 +94,6 @@ $(function () {
         return false;
     });
 
-    $("#event-comment-link").click(function(){
-        $("#comments-div").toggle();
-        return false;
-    });
-
     $(".comment-reply").hide();
     $(".user-details-popover").popover();
     $("#comments-div").hide();
@@ -138,7 +133,7 @@ function get_color() {
 function word_count(text, divId, maxcount) {
     var area = document.getElementById(text.id)
 
-    Countable.live(area, function(counter) {
+    Countable.once(area, function(counter) {
         $('#' + divId).text(counter.words);
         if (counter.words > maxcount)
             $('#' + divId).css('color', 'red');
@@ -146,28 +141,6 @@ function word_count(text, divId, maxcount) {
             $('#' + divId).css('color', 'black');
     });
 };
-
-/* Wait for the DOM to be ready before attaching events to the elements */
-$( document ).ready(function() {
-    /* Set the minimum and maximum proposal abstract word length */
-    $("#event_event_type_id").change(function () {
-        var $selected = $("#event_event_type_id option:selected")
-        var max = $selected.data("max-words");
-        var min = $selected.data("min-words");
-
-        $("#abstract-maximum-word-count").text(max);
-        $("#abstract-minimum-word-count").text(min);
-        word_count($('#event_abstract').get(0), 'abstract-count', max);
-    })
-        .trigger('change');
-
-    /* Count the proposal abstract length */
-    $("#event_abstract").bind('change keyup paste input', function() {
-        var $selected = $("#event_event_type_id option:selected")
-        var max = $selected.data("max-words");
-        word_count(this, 'abstract-count', max);
-    } );
-});
 
 /* Commodity function for modal windows */
 

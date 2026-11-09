@@ -15,12 +15,13 @@
       .well
         %table.datatable#registrations
           %thead
-            %th
-            %th Name
-            %th Email
-            %th Created AT
-            %th Attended
-            %th Attended Conference
+            %tr
+              %th
+              %th Name
+              %th Email
+              %th Created AT
+              %th Attended
+              %th Attended Conference
           %tbody
             - @event.events_registrations.each.with_index(1) do |event_registration, index|
               %tr
@@ -34,11 +35,11 @@
                 %td= event_registration.created_at
                 %td.text-center
                   - if event_registration.attended
-                    %i.fa.fa-check.text-success
+                    %i.fa-solid.fa-check.text-success
                   - else
-                    %i.fa.fa-times.text-danger
+                    %i.fa-solid.fa-xmark.text-danger
                 %td
                   - if event_registration.registration.attended
-                    %i.fa.fa-check.text-success
+                    %i.fa-solid.fa-check.text-success
                   -else
-                    %i.fa.fa-times.text-danger
+                    %i.fa-solid.fa-xmark.text-danger

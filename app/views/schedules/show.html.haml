@@ -26,9 +26,13 @@
 
           .visible-md-inline.visible-lg-inline
             = render partial: 'carousel', locals: { date: date, hrs_per_slide: 3 }
-    %p.pull-right
-      = link_to app_conference_schedule_path do
-        Get the mobile app!
+    %p
+      %span
+        = link_to conference_schedule_url(protocol: 'webcal', format: 'ics') do
+          Add the schedule to your calendar
+      %span.pull-right
+        = link_to app_conference_schedule_path do
+          Get the mobile app!
 
 :javascript
   // change of active tab and the button title when a date is clicked
@@ -39,7 +43,7 @@
     });
   });
 
-  // hide the right and left controls when neccesary after moving the carousel
+  // hide the right and left controls when necessary after moving the carousel
   $('.carousel').on('slid.bs.carousel', '',
   function(){
     $(this).children('.left.carousel-control').show();
@@ -61,14 +65,6 @@
       if($(this).find('.last').hasClass('active')) {
         $(this).children('.right.carousel-control').hide();
       }
-    });
-
-    // carousel swipe
-    $(".carousel-inner").swiperight(function() {
-      $(this).parent().carousel('prev');
-    });
-    $(".carousel-inner").swipeleft(function() {
-      $(this).parent().carousel('next');
     });
 
     var day = "#{@current_day}";

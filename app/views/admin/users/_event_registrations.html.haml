@@ -7,10 +7,11 @@
     .well
       %table.datatable#event_registrations
         %thead
-          %th ID
-          %th Conference
-          %th Title
-          %th Attended
+          %tr
+            %th ID
+            %th Conference
+            %th Title
+            %th Attended
         %tbody
           - @user.events_registrations.each do |event_registration|
             - event = event_registration.event
@@ -20,6 +21,6 @@
               %td= link_to event.title, admin_conference_program_event_path(event.program.conference.short_title, event)
               %td
                 - if @user.attended_event?(event)
-                  %i.fa.fa-check.text-success
+                  %i.fa-solid.fa-check.text-success
                 - else
-                  %i.fa.fa-times.text-danger
+                  %i.fa-solid.fa-xmark.text-danger

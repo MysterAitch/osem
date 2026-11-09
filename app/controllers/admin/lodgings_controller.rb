@@ -26,7 +26,7 @@ module Admin
     def edit; end
 
     def update
-      if @lodging.update_attributes(lodging_params)
+      if @lodging.update(lodging_params)
         redirect_to admin_conference_lodgings_path(conference_id: @conference.short_title),
                     notice: 'Lodging successfully updated.'
       else
@@ -49,7 +49,7 @@ module Admin
     private
 
     def lodging_params
-      params.require(:lodging).permit(:name, :description, :picture, :picture_cache, :website_link, :conference_id)
+      params.require(:lodging).permit(:name, :description, :picture, :picture_cache, :website_link)
     end
   end
 end

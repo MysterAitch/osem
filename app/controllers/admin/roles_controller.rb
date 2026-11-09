@@ -36,7 +36,7 @@ module Admin
     def update
       role_name = @role.name
 
-      if @role.update_attributes(role_params)
+      if @role.update(role_params)
         url = if @track
                 admin_conference_program_track_role_path(@conference.short_title, @track, @role.name)
               else
@@ -69,7 +69,7 @@ module Admin
       end
 
       # The conference must have at least 1 organizer
-      if @role.name == 'organizer' && state == 'false' && @role.users.count == 1
+      if @role.name == 'organizer' && state == 'false' && @role.users.one?
         redirect_to admin_conference_role_path(@conference.short_title, @role.name),
                     error: 'The conference must have at least 1 organizer!'
         return
@@ -94,7 +94,7 @@ module Admin
       elsif user.add_role @role.name, role_resource
         flash[:notice] = "Successfully added role #{@role.name} to user #{user.email}"
       else
-        flash[:error] = "Coud not add role #{@role.name} to #{user.email}"
+        flash[:error] = "Could not add role #{@role.name} to #{user.email}"
       end
 
       respond_to do |format|

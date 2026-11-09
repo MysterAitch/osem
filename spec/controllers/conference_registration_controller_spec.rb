@@ -12,8 +12,12 @@ describe ConferenceRegistrationsController, type: :controller do
   shared_examples 'access #new action' do |user, ichain, path, message|
     before :each do
       sign_in send(user) if user
-      stub_const('ENV', ENV.to_hash.merge('OSEM_ICHAIN_ENABLED' => ichain))
+      ENV['OSEM_ICHAIN_ENABLED'] = ichain
       get :new, params: { conference_id: conference.short_title }
+    end
+
+    after :each do
+      ENV['OSEM_ICHAIN_ENABLED'] = nil
     end
 
     it 'redirects' do
@@ -28,8 +32,12 @@ describe ConferenceRegistrationsController, type: :controller do
   shared_examples 'can access #new action' do |user, ichain|
     before :each do
       sign_in send(user) if user
-      stub_const('ENV', ENV.to_hash.merge('OSEM_ICHAIN_ENABLED' => ichain))
+      ENV['OSEM_ICHAIN_ENABLED'] = ichain
       get :new, params: { conference_id: conference.short_title }
+    end
+
+    after :each do
+      ENV['OSEM_ICHAIN_ENABLED'] = nil
     end
 
     it 'user variable exists' do
@@ -316,7 +324,7 @@ describe ConferenceRegistrationsController, type: :controller do
 
       context 'update fails' do
         before do
-          allow_any_instance_of(Registration).to receive(:update_attributes).and_return(false)
+          allow_any_instance_of(Registration).to receive(:update).and_return(false)
           patch :update, params: {
             registration:  attributes_for(:registration, volunteer: true),
             conference_id: conference.short_title

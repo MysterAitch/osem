@@ -2,18 +2,18 @@
 
 class Conference < ApplicationRecord
   include RevisionCount
+
   require 'uri'
-  serialize :events_per_week, Hash
+
+  serialize :events_per_week, type: Hash
+
   # Needed to call 'Conference.with_role' in /models/ability.rb
   # Dependent destroy will fail as roles#destroy will be cancelled,hence delete_all
   resourcify :roles, dependent: :delete_all
 
-  default_scope { order('start_date DESC') }
-  scope :upcoming, (-> { where('end_date >= ?', Date.current) })
-  scope :past, (-> { where('end_date < ?', Date.current) })
-
-  belongs_to :organization
-  delegate :code_of_conduct, to: :organization
+  default_scope { order(start_date: :desc) }
+  scope :upcoming, (-> { where(end_date: Date.current..) })
+  scope :past, (-> { where(end_date: ...Date.current) })
 
   has_paper_trail ignore: %i(updated_at guid revision events_per_week), meta: { conference_id: :id }
 
@@ -25,8 +25,11 @@ class Conference < ApplicationRecord
   has_one :email_settings, dependent: :destroy
   has_one :program, dependent: :destroy
   has_one :venue, dependent: :destroy
-  has_many :physical_tickets, through: :ticket_purchases
+  delegate :city, :country_name, to: :venue, allow_nil: true
+  delegate :name, :street, to: :venue, prefix: true, allow_nil: true
+
   has_many :ticket_purchases, dependent: :destroy
+  has_many :physical_tickets, through: :ticket_purchases
   has_many :payments, dependent: :destroy
   has_many :supporters, through: :ticket_purchases, source: :user
   has_many :tickets, dependent: :destroy
@@ -39,7 +42,7 @@ class Conference < ApplicationRecord
   has_many :participants, through: :registrations, source: :user
   has_many :vdays, dependent: :destroy
   has_many :vpositions, dependent: :destroy
-  has_many :sponsorship_levels, -> { order('position ASC') }, dependent: :destroy
+  has_many :sponsorship_levels, -> { order(:position) }, dependent: :destroy
   has_many :sponsors, dependent: :destroy
   has_many :commercials, as: :commercialable, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
@@ -80,7 +83,6 @@ class Conference < ApplicationRecord
             :start_hour,
             :end_hour,
             :ticket_layout,
-            :organization,
             :timezone, presence: true
 
   validates :short_title, uniqueness: true
@@ -97,7 +99,7 @@ class Conference < ApplicationRecord
   after_create :create_free_ticket
   after_update :delete_event_schedules
 
-  enum ticket_layout: [:portrait, :landscape]
+  enum :ticket_layout, [:portrait, :landscape]
 
   ##
   # Checks if the user is registered to the conference
@@ -108,7 +110,7 @@ class Conference < ApplicationRecord
   # * +false+ -> If the user is registered
   # * +true+ - If the user isn't registered
   def user_registered? user
-    user.present? && registrations.where(user_id: user.id).count > 0
+    user.present? && registrations.where(user_id: user.id).any?
   end
 
   ##
@@ -157,7 +159,7 @@ class Conference < ApplicationRecord
   def get_submissions_per_week
     result = []
 
-    if program&.cfp && program&.events
+    if program&.cfp && program.events
       submissions = program.events.select(:week).group(:week).order(:week).count
       start_week = program.cfp.start_week
       weeks = program.cfp.weeks
@@ -173,7 +175,7 @@ class Conference < ApplicationRecord
   # ====Returns
   #  * +Array+ -> e.g. 'Submitted' => [0, 3, 3, 5]  -> first week 0 events, second week 3 events.
   def get_submissions_data
-    return [] unless program&.cfp && program&.events
+    return [] unless program&.cfp && program.events
 
     start_week = program.cfp.start_week
     get_events_per_week_by_state.collect do |state, values|
@@ -197,10 +199,7 @@ class Conference < ApplicationRecord
   # ====Returns
   #  * +Array+ -> e.g. [0, 3, 3, 5] -> first week 0, second week 3 registrations
   def get_registrations_per_week
-    return [] unless registrations &&
-      registration_period &&
-      registration_period.start_date &&
-      registration_period.end_date
+    return [] unless registrations && registration_period&.start_date && registration_period.end_date
 
     reg = registrations.group(:week).order(:week).count
     start_week = get_registration_start_week
@@ -266,7 +265,7 @@ class Conference < ApplicationRecord
     result = 0
     weeks = 0
     if registration_period&.start_date &&
-        registration_period&.end_date
+        registration_period.end_date
       weeks = Date.new(registration_period.start_date.year, 12, 31)
           .strftime('%W').to_i
 
@@ -354,7 +353,7 @@ class Conference < ApplicationRecord
   # * +hash+ -> user: submissions
   def self.get_top_submitter(limit = 5)
     submitter = EventUser.select(:user_id).where('event_role = ?', 'submitter').limit(limit).group(:user_id)
-    counter = submitter.order('count_all desc').count(:all)
+    counter = submitter.order(count_all: :desc).count(:all)
     calculate_user_submission_hash(submitter, counter)
   end
 
@@ -367,7 +366,7 @@ class Conference < ApplicationRecord
     submitter = EventUser.joins(:event).select(:user_id)
         .where('event_role = ? and program_id = ?', 'submitter', Conference.find(id).program.id)
         .limit(limit).group(:user_id)
-    counter = submitter.order('count_all desc').count(:all)
+    counter = submitter.order(count_all: :desc).count(:all)
     Conference.calculate_user_submission_hash(submitter, counter)
   end
 
@@ -423,7 +422,7 @@ class Conference < ApplicationRecord
 
   ##
   # Returns a hash with affiliation =>
-  # {value: count of registration whose user has that affilation, color: color}
+  # {value: count of registration whose user has that affiliation, color: color}
   # In case that the affiliation is blank, it groups them in None and
   # if the number of persons that have an affiliation are less than the 2% of
   # the total number of registered people, they are grouped in others.
@@ -576,11 +575,11 @@ class Conference < ApplicationRecord
   # * +ActiveRecord+
   def self.get_active_conferences_for_dashboard
     result = Conference.where('start_date > ?', Time.now)
-        .select('id, short_title, color, start_date, organization_id')
+        .select('id, short_title, color, start_date')
 
     if result.empty?
       result = Conference
-          .select('id, short_title, color, start_date, organization_id').limit(2)
+          .select('id, short_title, color, start_date').limit(2)
           .order(start_date: :desc)
     end
     result
@@ -592,7 +591,7 @@ class Conference < ApplicationRecord
   # ====Returns
   # * +ActiveRecord+
   def self.get_conferences_without_active_for_dashboard(active_conferences)
-    result = Conference.select('id, short_title, color, start_date, organization_id').order(start_date: :desc)
+    result = Conference.select('id, short_title, color, start_date').order(start_date: :desc)
     result - active_conferences
   end
 
@@ -697,7 +696,7 @@ class Conference < ApplicationRecord
   end
 
   # Returns the number of hours since the conference start hour (9) to the
-  # current hour, in case that the current hour is beetween the start and the
+  # current hour, in case that the current hour is between the start and the
   # end hour (20). Otherwise, returns 0
   def hours_from_start_time(start_hour, end_hour)
     current_time = Time.find_zone(timezone).now
@@ -745,7 +744,7 @@ class Conference < ApplicationRecord
     '#' + next_color_component(:r, i) + next_color_component(:g, i) + next_color_component(:b, i)
   end
 
-  # Auxiliar function which is used in next_color and returns each component of
+  # Auxiliary function which is used in next_color and returns each component of
   # the color. We make use of big prime numbers to avoid repetition and to make
   # consecutive colors clearly different.
   def next_color_component(component, i)
@@ -788,7 +787,7 @@ class Conference < ApplicationRecord
 
   ##
   # Checks if start hour of the conference is greater or equal than the end hour
-  # and that both hours are beetween 0 and 24
+  # and that both hours are between 0 and 24
   #
   # Reports an error when such a condition is found
   def valid_times_range?
@@ -829,7 +828,7 @@ class Conference < ApplicationRecord
           unless result[state.to_s.capitalize]
             result[state.to_s.capitalize] = {}
           end
-          result[state.to_s.capitalize][week.strftime('%W').to_i] = value
+          result[state.to_s.capitalize][DateTime.parse(week).strftime('%W').to_i] = value
         end
       end
     end
@@ -923,9 +922,9 @@ class Conference < ApplicationRecord
   #
   # ====Returns
   # * +True+ -> One difficulty level or more
-  # * +False+ -> No diffculty level
+  # * +False+ -> No difficulty level
   def difficulty_levels_set?
-    program.difficulty_levels.count > 0
+    program.difficulty_levels.any?
   end
 
   ##
@@ -933,9 +932,9 @@ class Conference < ApplicationRecord
   #
   # ====Returns
   # * +True+ -> One difficulty level or more
-  # * +False+ -> No diffculty level
+  # * +False+ -> No difficulty level
   def event_types_set?
-    program.event_types.count > 0
+    program.event_types.any?
   end
 
   ##
@@ -945,7 +944,7 @@ class Conference < ApplicationRecord
   # * +True+ -> One track or more
   # * +False+ -> No track
   def tracks_set?
-    program.tracks.count > 0
+    program.tracks.any?
   end
 
   ##
@@ -955,7 +954,7 @@ class Conference < ApplicationRecord
   # * +True+ -> One room or more
   # * +False+ -> No room
   def rooms_set?
-    venue.present? && venue.rooms.count > 0
+    venue.present? && venue.rooms.any?
   end
 
   # Checks if the conference has a venue object.

@@ -27,7 +27,7 @@ module Admin
     end
 
     def update
-      if @sponsorship_level.update_attributes(sponsorship_level_params)
+      if @sponsorship_level.update(sponsorship_level_params)
         redirect_to admin_conference_sponsorship_levels_path(
                     conference_id: @conference.short_title),
                     notice: 'Sponsorship level successfully updated.'
@@ -61,7 +61,7 @@ module Admin
     private
 
     def sponsorship_level_params
-      params.require(:sponsorship_level).permit(:title, :conference_id)
+      params.require(:sponsorship_level).permit(:title)
     end
   end
 end

@@ -5,7 +5,7 @@ class Survey < ActiveRecord::Base
   has_many :survey_questions, dependent: :destroy
   has_many :survey_submissions, dependent: :destroy
 
-  enum target: [:after_conference, :during_registration, :after_event]
+  enum :target, [:after_conference, :during_registration, :after_event]
   validates :title, presence: true
 
   ##
@@ -25,11 +25,15 @@ class Survey < ActiveRecord::Base
     now = Time.current.in_time_zone(timezone)
 
     if start_date && end_date
-      now >= start_date && now <= end_date
+      now.between?(start_date, end_date)
     elsif start_date && !end_date
       now >= start_date
     elsif !start_date && end_date
       now <= end_date
     end
+  end
+
+  def closed?
+    !active?
   end
 end

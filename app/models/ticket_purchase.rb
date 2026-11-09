@@ -77,7 +77,7 @@ class TicketPurchase < ApplicationRecord
   end
 
   def pay(payment)
-    update_attributes(paid: true, payment: payment)
+    update(paid: true, payment: payment)
     PhysicalTicket.transaction do
       quantity.times { physical_tickets.create }
     end
@@ -96,8 +96,6 @@ class TicketPurchase < ApplicationRecord
     end
   end
 end
-
-private
 
 def set_week
   self.week = created_at.strftime('%W')

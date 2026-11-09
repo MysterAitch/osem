@@ -21,9 +21,15 @@ class SchedulesController < ApplicationController
       format.xml do
         @events_xml = event_schedules.map(&:event).group_by{ |event| event.time.to_date } if event_schedules
       end
+      format.ics do
+        cal = Icalendar::Calendar.new
+        cal = icalendar_proposals(cal, event_schedules.map(&:event), @conference)
+        cal.publish
+        render inline: cal.to_ical
+      end
 
       format.html do
-        @rooms = @conference.venue.rooms if @conference.venue
+        @rooms = @conference.venue.rooms.order(:name) if @conference.venue
         @dates = @conference.start_date..@conference.end_date
         @step_minutes = @program.schedule_interval.minutes
         @conf_start = @conference.start_hour
@@ -33,7 +39,7 @@ class SchedulesController < ApplicationController
         @current_day = @conference.current_conference_day
         @day = @current_day.present? ? @current_day : @dates.first
         if @current_day
-          # the schedule takes you to the current time if it is beetween the start and the end time.
+          # the schedule takes you to the current time if it is between the start and the end time.
           @hour_column = @conference.hours_from_start_time(@conf_start, @conference.end_hour)
         end
         # Ids of the @event_schedules of confrmed self_organized tracks along with the selected_schedule_id

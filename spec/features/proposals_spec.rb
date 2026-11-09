@@ -27,6 +27,15 @@ feature Event do
       sign_in organizer
     end
 
+    scenario 'adds a proposal', feature: true, js: true do
+      visit admin_conference_program_events_path(conference.short_title)
+      click_on 'Add Event'
+      fill_in 'Title', with: 'Organizer-Created Proposal'
+      fill_in 'Abstract', with: 'This proposal was created by an organizer.'
+      click_button 'Create Proposal'
+      within('#flash') { expect(page).to have_text('Event was successfully submitted.') }
+    end
+
     scenario 'rejects a proposal', feature: true, js: true do
       visit admin_conference_program_events_path(conference.short_title)
       expect(page).to have_content 'Example Proposal'
@@ -68,31 +77,46 @@ feature Event do
       @event.accept!(@options)
     end
 
-    scenario 'not signed_in user submits proposal' do
+    scenario 'not signed_in user submits proposal', js: true do
       expected_count_event = Event.count + 1
       expected_count_user = User.count + 1
 
       visit new_conference_program_proposal_path(conference.short_title)
-
-      fill_in 'user_username', with: 'Test User'
-      fill_in 'user_email', with: 'testuser@osem.io'
-      fill_in 'password_inline', with: 'testuserpassword'
-      fill_in 'user_password_confirmation', with: 'testuserpassword'
-
+      within('#signup') do
+        fill_in 'user_username', with: 'Test User'
+        fill_in 'user_email', with: 'testuser@osem.io'
+        fill_in 'user_password', with: 'testuserpassword'
+        fill_in 'user_password_confirmation', with: 'testuserpassword'
+      end
       fill_in 'event_title', with: 'Example Proposal'
+      expect(page).to have_selector '.in', text: 'Presentation in lecture format'
       select('Example Event Type', from: 'event[event_type_id]')
+      expect(page).to have_selector '.in', text: 'This event type is an example.'
       fill_in 'event_abstract', with: 'Lorem ipsum abstract'
 
       click_button 'Create Proposal'
-      page.find('#flash')
-      expect(page).to have_content 'Proposal was successfully submitted.'
 
+      within('#flash') { expect(page).to have_text('Proposal was successfully submitted.') }
       expect(Event.count).to eq(expected_count_event)
       expect(User.count).to eq(expected_count_user)
     end
 
-    scenario 'update a proposal' do
+    scenario 'edit proposal without cfp' do
       conference = create(:conference)
+      proposal = create(:event, program: conference.program)
+
+      sign_in proposal.submitter
+
+      visit edit_conference_program_proposal_path(proposal.program.conference.short_title, proposal)
+
+      expect(page).to have_content 'Proposal Information'
+    end
+
+    scenario 'update a proposal', js: true do
+      conference = create(:conference)
+      create :track, program:     conference.program,
+                     name:        'Example Track',
+                     description: 'This track is an *example*.'
       create(:cfp, program: conference.program)
       proposal = create(:event, program: conference.program)
 
@@ -101,11 +125,14 @@ feature Event do
       visit edit_conference_program_proposal_path(proposal.program.conference.short_title, proposal)
 
       fill_in 'event_subtitle', with: 'My event subtitle'
+      select 'Example Track', from: 'Track'
+      expect(page).to have_selector '.in', text: 'This track is an example.'
       select('Easy', from: 'event[difficulty_level_id]')
+      expect(page).to have_selector '.in', text: 'Events are understandable for everyone without knowledge of the topic.'
 
       click_button 'Update Proposal'
-      page.find('#flash')
-      expect(page).to have_content 'Proposal was successfully updated.'
+
+      within('#flash') { expect(page).to have_text('Proposal was successfully updated.') }
     end
 
     scenario 'signed_in user submits a valid proposal', feature: true, js: true do
@@ -117,17 +144,17 @@ feature Event do
 
       fill_in 'event_title', with: 'Example Proposal'
       select('Example Event Type', from: 'event[event_type_id]')
+      expect(page).to have_selector '.in', text: 'This event type is an example.'
+
       fill_in 'event_abstract', with: 'Lorem ipsum abstract'
       expect(page).to have_text('You have used 3 words')
 
-      click_link 'Do you require something special?'
+      click_link 'Do you require something special for your event?'
       fill_in 'event_description', with: 'Lorem ipsum description'
 
       click_button 'Create Proposal'
 
-      page.find('#flash')
-      expect(page).to have_content 'Proposal was successfully submitted.'
-      TransactionalCapybara::AjaxHelpers.wait_for_ajax(page)
+      within('#flash') { expect(page).to have_text('Proposal was successfully submitted.') }
       expect(current_path).to eq(conference_program_proposals_path(conference.short_title))
       expect(Event.count).to eq(expected_count)
     end
@@ -151,10 +178,9 @@ feature Event do
       expect(page).to have_content 'Example Proposal'
       click_link "delete_proposal_#{@event.id}"
       page.accept_alert
-      page.find('#flash')
-      expect(page).to have_content 'Proposal was successfully withdrawn.'
-      @event.reload
-      expect(@event.state).to eq('withdrawn')
+
+      within('#flash') { expect(page).to have_text('Proposal was successfully withdrawn.') }
+      expect(@event.reload.state).to eq('withdrawn')
     end
   end
 end

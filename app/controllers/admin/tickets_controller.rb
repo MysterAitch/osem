@@ -17,7 +17,7 @@ module Admin
 
     def create
       @ticket = @conference.tickets.new(ticket_params)
-      if @ticket.save(ticket_params)
+      if @ticket.save
         redirect_to admin_conference_tickets_path(conference_id: @conference.short_title),
                     notice: 'Ticket successfully created.'
       else
@@ -29,7 +29,7 @@ module Admin
     def edit; end
 
     def update
-      if @ticket.update_attributes(ticket_params)
+      if @ticket.update(ticket_params)
         redirect_to admin_conference_tickets_path(conference_id: @conference.short_title),
                     notice: 'Ticket successfully updated.'
       else
@@ -52,7 +52,7 @@ module Admin
     private
 
     def ticket_params
-      params.require(:ticket).permit(:conference, :title, :url, :description, :conference_id, :price_cents, :price_currency, :price, :registration_ticket)
+      params.require(:ticket).permit(:title, :url, :description, :price_cents, :price_currency, :price, :registration_ticket)
     end
   end
 end

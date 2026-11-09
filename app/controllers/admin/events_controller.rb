@@ -45,10 +45,8 @@ module Admin
       @votes = @event.votes.includes(:user)
       @difficulty_levels = @program.difficulty_levels
       @versions = @event.versions |
-                  PaperTrail::Version.where(item_type: 'Commercial').where('object LIKE ?', "%commercialable_id: #{@event.id}\ncommercialable_type: Event%") |
-                  PaperTrail::Version.where(item_type: 'Commercial').where('object_changes LIKE ?', "%commercialable_id:\n- \n- #{@event.id}\ncommercialable_type:\n- \n- Event%") |
-                  PaperTrail::Version.where(item_type: 'Vote').where('object_changes LIKE ?', "%\nevent_id:\n- \n- #{@event.id}\n%") |
-                  PaperTrail::Version.where(item_type: 'Vote').where('object LIKE ?', "%\nevent_id: #{@event.id}\n%")
+                  @event.commercials.map(&:versions).flatten |
+                  @event.votes.map(&:versions).flatten
     end
 
     def edit
@@ -57,7 +55,6 @@ module Admin
       @comment_count = @event.comment_threads.count
       @user = @event.submitter
       @url = admin_conference_program_event_path(@conference.short_title, @event)
-      @languages = @program.languages_list
     end
 
     def comment
@@ -71,8 +68,7 @@ module Admin
     end
 
     def update
-      @languages = @program.languages_list
-      if @event.update_attributes(event_params)
+      if @event.update(event_params)
 
         if request.xhr?
           render js: 'index'
@@ -89,7 +85,6 @@ module Admin
 
     def create
       @url = admin_conference_program_events_path(@conference.short_title, @event)
-      @languages = @program.languages_list
       @event.submitter = current_user
 
       if @event.save
@@ -102,7 +97,6 @@ module Admin
 
     def new
       @url = admin_conference_program_events_path(@conference.short_title, @event)
-      @languages = @program.languages_list
     end
 
     def accept
@@ -142,7 +136,7 @@ module Admin
       @votes = @event.votes.includes(:user)
 
       if (votes = current_user.votes.find_by_event_id(params[:id]))
-        votes.update_attributes(rating: params[:rating])
+        votes.update(rating: params[:rating])
       else
         @myvote = @event.votes.build
         @myvote.user = current_user
@@ -184,7 +178,7 @@ module Admin
     end
 
     def comment_params
-      params.require(:comment).permit(:commentable, :body, :user_id)
+      params.require(:comment).permit(:body)
     end
 
     def update_state(transition, notice, mail = false, subject = false, send_mail = false)

@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 class Event < ApplicationRecord
+  include ActionView::Helpers::NumberHelper # for number_with_precision
   include ActiveRecord::Transitions
   include RevisionCount
+
   has_paper_trail on: [:create, :update], ignore: [:updated_at, :guid, :week], meta: { conference_id: :conference_id }
 
   acts_as_commentable
@@ -92,7 +94,7 @@ class Event < ApplicationRecord
   }.freeze
 
   ##
-  # Checkes if the event has a start_time and a room for the selected schedule if there is any
+  # Checks if the event has a start_time and a room for the selected schedule if there is any
   # ====Returns
   # * +true+ or +false+
   def scheduled?

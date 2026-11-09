@@ -25,7 +25,7 @@ module Admin
     end
 
     def update
-      if @resource.update_attributes(resource_params)
+      if @resource.update(resource_params)
         redirect_to admin_conference_resources_path(conference_id: @conference.short_title),
                     notice: 'Resource successfully updated.'
       else
@@ -48,7 +48,7 @@ module Admin
     private
 
     def resource_params
-      params.require(:resource).permit(:name, :description, :quantity, :used, :conference_id)
+      params.require(:resource).permit(:name, :description, :quantity, :used)
     end
   end
 end

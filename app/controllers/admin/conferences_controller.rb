@@ -8,7 +8,7 @@ module Admin
 
     def index
       # Redirect to new form if there is no conference
-      if Conference.count == 0
+      if Conference.none?
         redirect_to new_admin_conference_path
         return
       end
@@ -68,7 +68,6 @@ module Admin
 
     def new
       @conference = Conference.new
-      @organizations = Organization.accessible_by(current_ability, :update).pluck(:name, :id)
     end
 
     def create
@@ -91,7 +90,7 @@ module Admin
       @conference.assign_attributes(conference_params)
       send_mail_on_conf_update = @conference.notify_on_dates_changed?
 
-      if @conference.update_attributes(conference_params)
+      if @conference.save
         ConferenceDateUpdateMailJob.perform_later(@conference) if send_mail_on_conf_update
         redirect_to edit_admin_conference_path(id: @conference.short_title),
                     notice: 'Conference was successfully updated.'
@@ -181,8 +180,8 @@ module Admin
                                          :use_vpositions, :use_vdays, :vdays_attributes,
                                          :vpositions_attributes, :use_volunteers, :color,
                                          :sponsorship_levels_attributes, :sponsors_attributes,
-                                         :registration_limit, :organization_id, :ticket_layout,
-                                         :booth_limit)
+                                         :registration_limit, :ticket_layout,
+                                         :booth_limit, :code_of_conduct)
     end
   end
 end

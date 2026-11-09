@@ -6,6 +6,8 @@ class PictureUploader < CarrierWave::Uploader::Base
   include CarrierWave::Compatibility::Paperclip
   include CarrierWave::BombShelter
 
+  storage :file
+
   # use cloudinary if it's configured
   if Cloudinary.config.cloud_name
     # use https by default
@@ -82,13 +84,11 @@ class PictureUploader < CarrierWave::Uploader::Base
     process resize_and_pad: [120, 70]
   end
 
-  # Add a white list of extensions which are allowed to be uploaded.
-  # For images you might use something like this:
-  def extension_whitelist
+  def extension_allowlist
     %w(jpg jpeg gif png)
   end
 
-  def content_type_whitelist
+  def content_type_allowlist
     /image\//
   end
 

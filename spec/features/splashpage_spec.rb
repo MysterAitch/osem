@@ -14,9 +14,9 @@ feature Splashpage do
     visit admin_conference_splashpage_path(conference.short_title)
 
     click_link 'Create Splashpage'
-    click_button 'Save Changes'
-    page.find('#flash')
-    expect(flash).to eq('Splashpage successfully created.')
+    click_button 'Save'
+
+    within('#flash') { expect(page).to have_text('Splashpage successfully created.') }
     expect(current_path).to eq(admin_conference_splashpage_path(conference.short_title))
     expect(page.has_text?('Private')).to be true
   end
@@ -28,15 +28,15 @@ feature Splashpage do
       sign_in organizer
       visit admin_conference_splashpage_path(conference.short_title)
 
-      click_link 'Edit'
+      click_link 'Configure'
       check('Make splash page public')
-      click_button 'Save Changes'
-      page.find('#flash')
-      expect(flash).to eq('Splashpage successfully updated.')
+      click_button 'Save'
+
+      within('#flash') { expect(page).to have_text('Splashpage successfully updated.') }
       expect(current_path).to eq(admin_conference_splashpage_path(conference.short_title))
       expect(page.has_text?('Public')).to be true
 
-      click_link 'Edit'
+      click_link 'Configure'
       expect(page.has_checked_field?('Make splash page public?')).to be true
     end
 
@@ -45,9 +45,8 @@ feature Splashpage do
       visit admin_conference_splashpage_path(conference.short_title)
       click_link 'Delete'
       page.accept_alert
-      page.find('#flash')
       expect(current_path).to eq(admin_conference_splashpage_path(conference.short_title))
-      expect(flash).to eq('Splashpage was successfully destroyed.')
+      within('#flash') { expect(page).to have_text('Splashpage was successfully destroyed.') }
       expect(Splashpage.count).to eq(0)
     end
 
@@ -60,24 +59,8 @@ feature Splashpage do
     scenario 'splashpage is not accessible for participants if it is not public' do
       sign_in participant
       visit conference_path(conference.short_title)
-      page.find('#flash')
-      expect(flash).to eq('You are not authorized to access this page.')
+      within('#flash') { expect(page).to have_text('You are not authorized to access this page.') }
       expect(current_path).to eq(root_path)
-    end
-  end
-
-  context 'navigation' do
-    let!(:splashpage) { create(:splashpage, conference: conference, public: true)}
-
-    context 'multiple organizations' do
-      let!(:additional_organization) { create(:organization) }
-
-      scenario 'should have organization name', feature: true, js: true do
-        sign_in participant
-        visit conference_path(conference.short_title)
-
-        expect(page).to have_text(conference.organization.name)
-      end
     end
   end
 end

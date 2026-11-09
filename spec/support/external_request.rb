@@ -2,7 +2,6 @@
 
 # Mock external requests to youtube
 require 'webmock/rspec'
-WebMock.disable_net_connect!(allow_localhost: true, allow: /stripe.com/)
 
 RSpec.configure do |config|
   config.before(:each) do

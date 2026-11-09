@@ -1,26 +1,28 @@
 # frozen_string_literal: true
 
-source 'https://rubygems.org'
-
-ruby ENV['OSEM_RUBY_VERSION'] || '2.5.8'
-
-# rails-assets requires >= 1.8.4
-if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.8.4')
-  abort "Bundler version >= 1.8.4 is required"
+def next?
+  File.basename(__FILE__) == "Gemfile.next"
 end
 
+source 'https://rubygems.org'
+
+ruby '~> 3.3'
+
 # as web framework
-gem 'rails', '~> 5.2'
+if next?
+  gem 'rails', '~> 8.0'
+else
+  gem 'rails', '~> 7.2'
+end
 
 # Use Puma as the app server
-gem 'puma', '~> 3.0'
+gem 'puma'
 
 # respond_to methods have been extracted to the responders gem
 # http://edgeguides.rubyonrails.org/upgrading_ruby_on_rails.html#responders
-gem 'responders', '~> 2.0'
+gem 'responders', '~> 3.0'
 
-# as supported databases
-gem 'mysql2'
+# as database
 gem 'pg'
 
 # for tracking data changes
@@ -34,7 +36,7 @@ gem 'mini_magick'
 # for internationalizing
 gem 'rails-i18n'
 
-# as authentification framework
+# as authentication framework
 gem 'devise'
 gem 'devise_ichain_authenticatable'
 
@@ -44,6 +46,7 @@ gem 'omniauth-facebook'
 gem 'omniauth-github'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-openid'
+gem 'omniauth-rails_csrf_protection'
 
 # Bot-filtering
 gem 'recaptcha', require: 'recaptcha/rails'
@@ -77,44 +80,13 @@ gem 'uglifier', '>= 1.3.0'
 gem 'autoprefixer-rails'
 gem 'bootstrap-sass', '~> 3.4.0'
 gem 'cocoon'
-gem 'formtastic', '~> 3.1.5'
-gem 'formtastic-bootstrap'
 
 # as the JavaScript library
 gem 'jquery-rails'
-gem 'jquery-ui-rails', '~> 6.0.1'
+gem 'jquery-ui-rails'
 
 # for languages validation
 gem 'iso-639'
-
-# frontend javascripts
-source 'https://rails-assets.org' do
-  # for placeholder images
-  gem 'rails-assets-holderjs'
-  # for formating dates
-  gem 'rails-assets-date.format'
-  # for or parsing, validating, manipulating, and formatting dates
-  gem 'rails-assets-momentjs'
-  # for smooth scrolling
-  gem 'rails-assets-jquery-smooth-scroll'
-  # as color picker
-  gem 'rails-assets-spectrum'
-  # for color manipulation
-  gem 'rails-assets-tinycolor'
-  # for drawing triangle backgrounds
-  gem 'rails-assets-trianglify'
-  # for scroll way points
-  gem 'rails-assets-waypoints'
-  # for markdown editors
-  gem 'rails-assets-bootstrap-markdown'
-  # for select with icon
-  gem 'rails-assets-bootstrap-select'
-  gem 'rails-assets-markdown'
-  gem 'rails-assets-to-markdown', '~> 3'
-end
-
-# as date picker
-gem 'bootstrap3-datetimepicker-rails', '~> 4.17.47'
 
 # data tables
 gem 'ajax-datatables-rails'
@@ -126,25 +98,34 @@ gem 'chartkick'
 # for displaying maps
 gem 'leaflet-rails'
 
+# for exporting CSV files
+gem 'csv'
+
 # for user avatars
 gem 'gravtastic'
 
 # for country selects
-gem 'country_select'
+gem 'i18n_data'
 
 # as PDF generator
 gem 'prawn-qrcode'
 gem 'prawn-rails'
+# FIXME: for prawn, matrix isn't in the default set of Ruby 3.1 anymore
+# see https://github.com/prawnpdf/prawn/commit/3658d5125c3b20eb11484c3b039ca6b89dc7d1b7
+gem 'matrix', '~> 0.4'
+
+# FIXME: for selenium-webdriver, rexml isn't in the default set of Ruby 3.1 anymore
+# see https://github.com/SeleniumHQ/selenium/commit/526fd9d0de60a53746ffa982feab985fed09a278
+gem 'rexml'
 
 # for QR code generation
 gem 'rqrcode'
 
 # to render XLS spreadsheets
-gem 'axlsx', git: 'https://github.com/randym/axlsx.git'
-gem 'axlsx_rails'
+gem 'caxlsx_rails'
 
 # as error catcher
-gem 'airbrake'
+gem 'sentry-rails'
 
 # to make links faster
 gem 'turbolinks'
@@ -153,13 +134,10 @@ gem 'turbolinks'
 gem 'active_model_serializers'
 
 # as icon font
-gem 'font-awesome-rails'
+gem 'font-awesome-sass'
 
 # for markdown
 gem 'redcarpet'
-
-# for visitor tracking
-gem 'piwik_analytics', '~> 1.0.1'
 
 # for recurring jobs
 gem 'delayed_job_active_record'
@@ -175,7 +153,7 @@ gem 'money-rails'
 gem 'acts_as_list'
 
 # for switch checkboxes
-gem 'bootstrap-switch-rails', '~> 3.0.0'
+gem 'bootstrap-switch-rails', '3.3.3' # Locked pending Bttstrp/bootstrap-switch#707
 
 # for parsing OEmbed data
 gem 'ruby-oembed'
@@ -208,28 +186,30 @@ gem 'sprockets-rails'
 # for multiple speakers select on proposal/event forms
 gem 'selectize-rails'
 
-# For collecting performance data
-gem 'skylight'
-
-# Nokogiri < 1.8.1 is subject to:
-# CVE-2017-0663, CVE-2017-7375, CVE-2017-7376, CVE-2017-9047, CVE-2017-9048,
-# CVE-2017-9049, CVE-2017-9050
-gem 'nokogiri', '>= 1.8.1'
-
+# Pin to solve https://github.com/mperham/connection_pool/issues/212
+gem "connection_pool", "< 3"
 # memcached binary connector
 gem 'dalli'
 
-# Use guard and spring for testing in development
+# to generate ical files
+gem 'icalendar'
+
+# to tame logs
+gem 'lograge'
+
 group :development do
-  # to launch specs when files are modified
-  gem 'guard-rspec'
-  gem 'haml_lint'
-  gem 'spring-commands-rspec'
-  # for static code analisys
+  # for static code analysis
   gem 'rubocop', require: false
-  gem 'rubocop-rspec'
+  gem 'rubocop-rspec', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec_rails', require: false
+  gem 'rubocop-factory_bot', require: false
+  gem 'rubocop-capybara', require: false
+  gem 'rubocop-performance', require: false
+  gem 'haml_lint'
   # to open mails
   gem 'letter_opener'
+  gem 'letter_opener_web'
   # as deployment system
   gem 'mina'
   # as debugger on error pages
@@ -240,12 +220,9 @@ group :test do
   # as test framework
   gem 'capybara'
   gem 'database_cleaner'
-  gem 'geckodriver-helper'
   gem 'rspec-rails'
-  gem 'transactional_capybara'
-  gem 'webdrivers'
   # for measuring test coverage
-  gem 'codecov', require: false
+  gem 'simplecov-cobertura'
   # for describing models
   gem 'shoulda-matchers', require: false
   # for stubing/mocking models
@@ -255,7 +232,7 @@ group :test do
   # for mocking external requests
   gem 'webmock'
   # for mocking Stripe responses in tests
-  gem 'stripe-ruby-mock'
+  gem 'stripe-ruby-mock', '~> 3.1.0.rc3'
   # For validating JSON schemas
   gem 'json-schema'
   # For using 'assigns' in tests
@@ -267,8 +244,11 @@ group :test do
 end
 
 group :development, :test do
+  # as capybara driver
+  gem 'webdrivers'
+  gem 'geckodriver-helper'
   # as debugger
   gem 'byebug'
-  # as development/test database
-  gem 'sqlite3'
+  # to test new rails version
+  gem 'next_rails'
 end

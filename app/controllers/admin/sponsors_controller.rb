@@ -28,7 +28,7 @@ module Admin
     end
 
     def update
-      if @sponsor.update_attributes(sponsor_params)
+      if @sponsor.update(sponsor_params)
         redirect_to admin_conference_sponsors_path(
                     conference_id: @conference.short_title),
                     notice: 'Sponsor successfully updated.'
@@ -52,14 +52,14 @@ module Admin
     private
 
     def sponsor_params
-      params.require(:sponsor).permit(:name, :description, :website_url, :picture, :picture_cache, :sponsorship_level_id, :conference_id)
+      params.require(:sponsor).permit(:name, :description, :website_url, :picture, :picture_cache, :sponsorship_level_id)
     end
 
     def sponsorship_level_required
       return unless @conference.sponsorship_levels.empty?
 
       redirect_to admin_conference_sponsorship_levels_path(conference_id: @conference.short_title),
-                  alert: 'You need to create atleast one sponsorship level to add a sponsor'
+                  alert: 'You need to create at least one sponsorship level to add a sponsor'
     end
   end
 end

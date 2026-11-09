@@ -1,46 +1,111 @@
-.tabbable
-  %ul.nav.nav-tabs
-    %li.active
-      = link_to 'Proposal', '#proposal-content', 'data-toggle' => 'tab'
-    %li
-      = link_to 'Commercials', '#commercials-content', 'data-toggle' => 'tab'
-  .tab-content
-    #proposal-content.tab-pane.active
-      = render 'proposals/proposal_form'
-    #commercials-content.tab-pane
-      %p.text-muted
-        You can add commercials for your proposal. These commercials will be displayed on the
-        = link_to 'public proposal page.', conference_program_proposal_path(@conference.short_title, @event)
-        If you don't add a commercial, the conference commercial will be displayed!
-      - if can? :create, @event.commercials.new
-        .row
-          .col-md-6
-            #resource-content
-            #resource-placeholder{ style: 'background-color:#d3d3d3; float: left; width: 400px; height: 250px; margin: 5px; border-width: 1px; border-style: solid; border-color: rgba(0,0,0,.2);' }
-        .row
-          .col-md-6
-            = semantic_form_for(@event.commercials.build, url: conference_program_proposal_commercials_path(conference_id: @conference.short_title, proposal_id: @event)) do |f|
-              = f.input :url, label: 'URL', as: :string, input_html: { required: 'required', type: 'url' },
-              hint: 'Just paste the url of your video/photo provider. Currently supported: YouTube, Vimeo, SpeakerDeck, SlideShare, Instagram, Flickr.'
-              = f.action :submit, as: :button, button_html: { class: 'btn btn-primary pull-right', disabled: true }
-        %hr
-      - @event.commercials.each_slice(3) do |slice|
-        .row
-          - slice.each do |commercial|
-            - if commercial.persisted?
-              .col-md-4
-                .thumbnail
-                  .flexvideo{ id: "resource-content-#{commercial.id}"}
-                    = render partial: 'shared/media_item', locals: { commercial: commercial }
-                  .caption
-                    - if can? :update, commercial
-                      = semantic_form_for commercial, url: conference_program_proposal_commercial_path(conference_id: @conference.short_title, proposal_id: @event, id: commercial) do |f|
-                        = f.input :url, label: 'URL', as: :string, input_html: { id: "commercial_url_#{commercial.id}", required: 'required', type: 'url' }
-                        = f.action :submit, as: :button, button_html: { class: 'btn btn-success' }, label: 'Update'
-                        - if can? :destroy, commercial
-                          = link_to 'Delete', conference_program_proposal_commercial_path(@conference.short_title, @event.id, commercial.id),
-                          :method => :delete, :data => { :confirm => 'Are you sure?' }, class: 'btn btn-danger'
-                    - if commercial.versions.any?
-                      .text-right
-                        = "added by "
-                        = link_to_user(commercial.versions.last.whodunnit)
+:ruby
+  action_is_edit = @event.persisted?
+  user_is_admin = current_user&.is_admin?
+  display_details = user_is_admin || action_is_edit
+  display_registration = user_is_admin || @program.cfp&.enable_registrations?
+
+%h4
+  Proposal Information
+%hr
+.form-group
+  = f.label :title
+  %abbr{title: 'This field is required'} *
+  = f.text_field :title, autofocus: true, required: true, class: 'form-control'
+- if display_details
+  .form-group
+    = f.label :subtitle
+    = f.text_field :subtitle, class: 'form-control'
+  .form-group
+    %label{for: 'users_selectize-selectized'} Speakers
+    = f.select :speaker_ids, f.object.speakers.pluck(:username, :id), {}, {  multiple: true, class: "form-control", id: "users_selectize", placeholder: "Speakers" }
+    %span.help-block
+      The people responsible for the event, beside you. You can only select existing users.
+  - if @program.tracks.confirmed.cfp_active.any?
+    .form-group
+      = f.label :track_id, 'Track'
+      = f.select :track_id, @program.tracks.confirmed.cfp_active.pluck(:name, :id), { include_blank: '(Please select)' }, { class: 'form-control select-help-toggle' }
+      = render 'shared/select_help_text', f: f, for: :track_id, include_blank: true, options: @program.tracks.confirmed.cfp_active do |track|
+        = markdown(track.description)
+.form-group
+  = f.label :event_type_id, 'Type'
+  = f.select :event_type_id, event_type_select_options(@conference.program.event_types), { include_blank: false }, { class: 'select-help-toggle form-control' }
+  = render 'shared/select_help_text', f: f, for: :event_type_id, options: @conference.program.event_types do |event_type|
+    = event_type.description
+- if @program.languages.present?
+  .form-group
+  = f.label :language
+  = f.select :language, @program.languages_list, { include_blank: false}, { class: 'select-help-toggle form-control' }
+- if display_details
+  - if @conference.program.difficulty_levels.any?
+    = f.label :difficulty_level
+    = f.select :difficulty_level_id, @conference.program.difficulty_levels.map{|level| [level.title, level.id ] }, {include_blank: false}, { class: 'select-help-toggle form-control' }
+    = render 'shared/select_help_text', f: f, for: :difficulty_level_id, options: @conference.program.difficulty_levels do |difficulty_level|
+      = difficulty_level.description
+.form-group
+  = f.label :abstract
+  %p
+    You have used
+    %span#abstract-count
+      = @event.abstract_word_count
+    words.
+  = f.text_area :abstract, required: true, rows: 5, data: { provide: 'markdown' }, class: 'form-control'
+  %span.help-block
+    = markdown_hint('[Tips to improve your presentations.](http://blog.hubspot.com/blog/tabid/6307/bid/5975/10-Rules-to-Instantly-Improve-Your-Presentations.aspx)')
+  - if display_registration && display_details
+    %h4
+      Event Registration
+    %hr
+  - if display_registration
+    .checkbox
+      %label
+        = f.check_box :require_registration
+        Require participants to register to your event
+  - if display_registration && display_details
+    .form-group
+      = f.label :max_attendees
+      = f.number_field :max_attendees,  class: 'form-control'
+      %span.help-block
+        - message = @event.room ? "Value must be between 1 and #{@event.room.size}" : 'Check room capacity after scheduling.'
+        = 'The maximum number of participants. ' + message
+  - if display_details && current_user.has_any_role?(:admin, { name: :organizer, resource: @conference }, { name: :cfp, resource: @conference })
+    .checkbox
+      %label
+        = f.check_box :is_highlight
+        Is a highlight?
+  %p.text-right
+    = link_to '#description', 'data-toggle' => 'collapse' do
+      Do you require something special for your event?
+  #description{ class: "collapse #{ 'in' if @event.description.present? }" }
+    .form-group
+      = f.label :description, 'Requirements'
+      = f.text_area :description, rows: 5
+      %span.help-block
+        Eg. Whiteboard, printer, or something like that.
+  %p.text-right
+    - submit_copy = action_is_edit ? 'Update Proposal' : 'Create Proposal'
+    = f.submit submit_copy, class: 'btn btn-success'
+
+- content_for :script_head do
+  :javascript
+    /* Wait for the DOM to be ready before attaching events to the elements */
+    $( document ).ready(function() {
+        /* Set the minimum and maximum proposal abstract word length */
+        function updateEventTypeRequirements() {
+            var $selected = $("#event_event_type_id option:selected")
+            var max = $selected.data("max-words");
+            var min = $selected.data("min-words");
+
+            $("#abstract-maximum-word-count").text(max);
+            $("#abstract-minimum-word-count").text(min);
+            word_count($('#event_abstract').get(0), 'abstract-count', max);
+        }
+        $("#event_event_type_id").change(updateEventTypeRequirements);
+        updateEventTypeRequirements();
+
+        /* Count the proposal abstract length */
+        $("#event_abstract").on('input', function() {
+            var $selected = $("#event_event_type_id option:selected")
+            var max = $selected.data("max-words");
+            word_count(this, 'abstract-count', max);
+        } );
+    });

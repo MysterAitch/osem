@@ -12,7 +12,6 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require jquery.mobile.custom.min
 //= require jquery-ui/widgets/draggable
 //= require jquery-ui/widgets/droppable
 //= require waypoints/jquery.waypoints
@@ -32,8 +31,6 @@
 //= require momentjs
 //= require leaflet
 //= require holderjs
-//= require bootstrap-datetimepicker
-//= require osem-datepickers
 //= require osem-datatables
 //= require osem-tickets
 //= require bootstrap-switch

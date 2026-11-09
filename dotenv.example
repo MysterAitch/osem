@@ -9,13 +9,10 @@
 # bundle exec rake secret
 # SECRET_KEY_BASE=12345
 
-# The type of database to use (postgresql, mysql2, sqlite3)
-# OSEM_DB_ADAPTER=mysql2
-
 # The name of the host the database runs on
 # OSEM_DB_HOST=database
 
-# The port the databse runs on
+# The port the database runs on
 # OSEM_DB_PORT=3306
 
 # The user to access the database with
@@ -31,9 +28,6 @@
 # OSEM_MEMCACHED_SERVERS='cache-1.example.com,cache-2.example.com'
 # OSEM_MEMCACHED_USERNAME='root'
 # OSEM_MEMCACHED_PASSWORD='1234'
-
-# The ruby version to use
-# OSEM_RUBY_VERSION=2.5.0
 
 # What time is it?
 # OSEM_TIME_ZONE="UTC"
@@ -52,12 +46,8 @@
 # See https://github.com/openSUSE/osem/wiki/Translation
 # OSEM_TRANSIFEX_APIKEY=1234
 
-# The errbit host to post exceptions to
-# OSEM_ERRBIT_HOST=errbit.example.com
-# The project to use on the errbit host
-# OSEM_ERRBIT_ID=1234
-# The key for this project
-# OSEM_ERRBIT_KEY=5678
+# sentry.io DSN key
+# OSEM_SENTRY_DSN=1234
 
 # OMNIAUTH Developer Key/Secret for GOOGLE
 # OSEM_GOOGLE_KEY=1234
@@ -113,15 +103,7 @@
 # OSEM_LOG_LEVEL=info
 
 # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-# FORCE_SSL=1
-
-# Your skylight.io keys
-# SKYLIGHT_AUTHENTICATION=1234
-# SKYLIGHT_PUBLIC_DASHBOARD_URL='https://oss.skylight.io/app/applications/xxxxxxxxxxxx'
-
-# Disable linting of factories in the test suite.
-# Speeds up turn around times of tests
-# OSEM_FACTORY_LINT=false
+# FORCE_SSL=true
 
 # How should browser tests be performed?
 # For headless Chrome (default):

@@ -1,7 +1,8 @@
-/db/test.sqlite3-journal
 config/application.rb
 config/config.yml
 config/secrets.yml
+config/master.key
+config/credentials.yml.enc
 /vendor/cache
 /vendor/cache-old
 /storage/*
@@ -16,7 +17,6 @@ capybara-*.html
 /vendor/bundle
 /log/*
 /tmp/*
-/db/*.sqlite3
 /public/system/*
 /coverage/
 /spec/tmp/*
@@ -40,3 +40,6 @@ docker-compose.override.yml
 .buildconfig
 osem_development
 osem_test
+.ackrc
+spec/support/deprecation_shitlist.json
+.vscode

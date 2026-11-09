@@ -1,6 +1,6 @@
 - content_for :head do
   %meta{ property: "og:title", content: @conference.title }
-  %meta{ property: "og:site_name", content: (ENV['OSEM_NAME'] || 'OSEM') }
+  %meta{ property: "og:site_name", content: ENV.fetch('OSEM_NAME', 'OSEM') }
   %meta{ property: "og:description", content: @conference.description }
   %meta{ property: "og:url", content: conference_url(@conference.short_title) }
   %meta{ property: "twitter:title", content: (@conference.title) }
@@ -18,9 +18,6 @@
 
 
 #splash
-  - if @conference.code_of_conduct.present?
-    = render 'code_of_conduct', organization: @conference.organization
-
   -# header/description
   = render 'header', conference: @conference, venue: @conference.venue
 

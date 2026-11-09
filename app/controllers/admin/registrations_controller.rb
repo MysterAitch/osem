@@ -20,7 +20,7 @@ module Admin
       respond_to do |format|
         format.html
         format.json do
-          render json: RegistrationDatatable.new(view_context, conference: @conference)
+          render json: RegistrationDatatable.new(params, conference: @conference, view_context: view_context)
         end
         format.pdf { render 'index', layout: false }
         format.xlsx do
@@ -37,9 +37,9 @@ module Admin
     def edit; end
 
     def update
-      @user.update_attributes(user_params)
+      @user.update(user_params)
 
-      @registration.update_attributes(registration_params)
+      @registration.update(registration_params)
       if @registration.save
         redirect_to admin_conference_registrations_path(@conference.short_title),
                     notice: "Successfully updated registration for #{@registration.user.email}!"
@@ -82,8 +82,7 @@ module Admin
 
     def registration_params
       params.require(:registration).permit(
-        :user_id, :conference_id, :attended,
-        :volunteer, :other_special_needs, :accepted_code_of_conduct,
+        :attended, :volunteer, :other_special_needs, :accepted_code_of_conduct,
         vchoice_ids: [], qanswer_ids: [], qanswers_attributes: [], event_ids: []
       )
     end

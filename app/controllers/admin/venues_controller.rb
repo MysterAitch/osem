@@ -25,7 +25,7 @@ module Admin
     end
 
     def update
-      if @venue.update_attributes(venue_params)
+      if @venue.update(venue_params)
         redirect_to admin_conference_venue_path(conference_id: @conference.short_title),
                     notice: 'Venue was successfully updated.'
       else
@@ -46,7 +46,7 @@ module Admin
     private
 
     def venue_params
-      params.require(:venue).permit(:name, :street, :postalcode, :city, :country, :longitude, :latitude, :description, :website, :picture, :picture_cache, :lodgings_attributes, :conference_id)
+      params.require(:venue).permit(:name, :street, :postalcode, :city, :country, :longitude, :latitude, :description, :website, :picture, :picture_cache, :lodgings_attributes)
     end
   end
 end

@@ -3,9 +3,9 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'simplecov'
 
-if ENV['TRAVIS']
-  require 'codecov'
-  SimpleCov.formatter = SimpleCov::Formatter::Codecov
+if ENV['GITHUB_ACTIONS']
+  require 'simplecov-cobertura'
+  SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 end
 SimpleCov.start 'rails'
 
@@ -19,9 +19,6 @@ require 'webdrivers'
 # To avoid confusion on missed migrations - use Rails 4 checker to ensure
 # all migrations applied
 ActiveRecord::Migration.maintain_test_schema!
-
-# Keep capybara and the database on the same page
-require 'transactional_capybara/rspec'
 
 # Adds rspec helper provided by paper_trail
 # makes it easier to control when PaperTrail is enabled during testing.
@@ -38,7 +35,7 @@ include ERB::Util
 # run twice. It is recommended that you do not name files matching this glob to
 # end with _spec.rb. You can configure this pattern with with the --pattern
 # option on the command line or in ~/.rspec, .rspec or `.rspec-local`.
-Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
+Rails.root.glob('spec/support/**/*.rb').each { |f| require f }
 
 RSpec.configure do |config|
   # ## Mock Framework
@@ -49,10 +46,8 @@ RSpec.configure do |config|
   # config.mock_with :flexmock
   # config.mock_with :rr
 
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
-  config.use_transactional_fixtures = false
+  # Test within database transactions
+  config.use_transactional_examples = true
 
   # Run specs in random order to surface order dependencies. If you find an
   # order dependency and want to debug it, you can fix the order by providing
@@ -90,17 +85,16 @@ RSpec.configure do |config|
 
   # use a real browser for JS tests
   Capybara.javascript_driver = (
-    ENV['OSEM_TEST_DRIVER'].try(:to_sym) || :chrome_headless
+    ENV.fetch('OSEM_TEST_DRIVER', 'chrome_headless').to_sym
   )
 
   # Includes helpers and connect them to specific types of tests
   config.include FactoryBot::Syntax::Methods
   config.include OmniauthMacros
-  config.include Devise::TestHelpers, type: :controller
+  config.include Devise::Test::ControllerHelpers, type: :controller
   config.include LoginMacros, type: :feature
-  config.include Flash, type: :feature
   config.include Sidebar, type: :view
-  config.include Devise::TestHelpers, type: :view
+  config.include Devise::Test::ControllerHelpers, type: :view
 
   # As we start from scratch in April 2014, let's forbid the old :should syntax
   config.expect_with :rspec do |c|
@@ -121,6 +115,17 @@ RSpec.configure do |config|
   #     save_and_open_page
   #   end
   # end
+
+  # Expect configured host instead of `test.host` (see https://stackoverflow.com/q/15414847)
+  config.before(:each, type: :controller) do
+    @request.host = Rails.application.routes.default_url_options[:host]
+  end
+
+  config.before(:each) do
+    Rails.logger.debug '======================================================================'
+    Rails.logger.debug { "\n\n\n\t\t#{RSpec.current_example.metadata[:full_description]}\n\n\n" }
+    Rails.logger.debug '======================================================================'
+  end
 
   # use the config to use
   # t('some.locale.key') instead of always having to type I18n.t

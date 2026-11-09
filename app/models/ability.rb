@@ -17,11 +17,11 @@ class Ability
 
   # Abilities for not signed in users (guests)
   def not_signed_in
-    can [:index, :conferences, :code_of_conduct], Organization
     can [:index], Conference
     can [:show], Conference do |conference|
       conference.splashpage&.public == true
     end
+    can :code_of_conduct, Conference
     # Can view the schedule
     can [:schedule, :events], Conference do |conference|
       conference.program.cfp && conference.program.schedule_public
@@ -42,7 +42,7 @@ class Ability
     can [:index, :show], Survey, surveyable_type: 'Conference'
 
     # Things that are possible without ichain enabled that are **not*+ possible with ichain mode enabled.
-    if ENV['OSEM_ICHAIN_ENABLED'] != 'true'
+    if ENV.fetch('OSEM_ICHAIN_ENABLED', nil) != 'true'
       # There is no reliable way for this workflow (enable not logged in users to fill out a form, then telling
       # them to sign up once they submit) in ichain. So enable it only without ichain.
 
@@ -86,7 +86,6 @@ class Ability
       end
     end
 
-    can :index, Organization
     can :index, Ticket
     can :manage, TicketPurchase, user_id: user.id
     can [:new, :create], Payment, user_id: user.id
@@ -122,9 +121,7 @@ class Ability
     # if not, do not allow replies.
 
     # do not allow replies before the start_date or after the end_date of survey
-    cannot :reply, Survey do |survey|
-      survey.start_date > Time.current || survey.end_date < Time.current
-    end
+    cannot :reply, Survey, &:closed?
 
     can [:destroy], Openid
 
@@ -155,6 +152,8 @@ class Ability
       can :manage, Registration, conference_id: conf_ids_for_organizer
       # To access conference/proposals
       can :manage, Event, program: { conference_id: conf_ids_for_organizer }
+      can :manage, Commercial, commercialable_type: 'Event',
+                               commercialable_id:   Event.where(program_id: Program.where(conference_id: conf_ids_for_organizer).pluck(:id)).pluck(:id)
       # To access comment link in menu bar
       can :index, Comment, commentable_type: 'Event',
                            commentable_id:   Event.where(program_id: Program.where(conference_id: conf_ids_for_organizer).pluck(:id)).pluck(:id)
@@ -166,6 +165,8 @@ class Ability
                            commentable_id:   Event.where(program_id: Program.where(conference_id: conf_ids_for_cfp).pluck(:id)).pluck(:id)
       # To access conference/proposals
       can :manage, Event, program: { conference_id: conf_ids_for_cfp }
+      can :manage, Commercial, commercialable_type: 'Event',
+                               commercialable_id:   Event.where(program_id: Program.where(conference_id: conf_ids_for_cfp).pluck(:id)).pluck(:id)
     end
 
     if conf_ids_for_info_desk

@@ -12,13 +12,14 @@
   .col-md-12.table-responsive
     %table.datatable#users{ data: { source: admin_users_path(format: :json) } }
       %thead
-        %th{ width: '0' } ID
-        %th{ width: '0' } Confirmed?
-        %th{ width: '0' } Email
-        %th{ width: '50%' } Name
-        %th{ width: '0' } Conferences Attended
-        %th{ width: '50%' } Roles
-        %th{ width: '0' } Actions
+        %tr
+          %th{ width: '0' } ID
+          %th{ width: '0' } Confirmed?
+          %th{ width: '0' } Email
+          %th{ width: '50%' } Name
+          %th{ width: '0' } Conferences Attended
+          %th{ width: '50%' } Roles
+          %th{ width: '0' } Actions
       %tbody
 
 :javascript
@@ -61,13 +62,13 @@
           }
         },
         {
-          "data": null,
+          "data": "actions",
           "className": "actions",
           "sortable": false,
           "render":    function (data, type, row, meta) {
             return '<div class="btn-group">'+
-                   '<a class="btn-info" href="'+data.view_url+'">View</a>'+
-                   '<a class="btn-primary" href="'+data.edit_url+'">Edit</a>'+
+                   '<a class="btn-info" href="'+row.view_url+'">View</a>'+
+                   '<a class="btn-primary" href="'+row.edit_url+'">Edit</a>'+
                    '</div>';
           }
         }

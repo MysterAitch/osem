@@ -1,10 +1,11 @@
 Osem::Application.routes.draw do
+  mount LetterOpenerWeb::Engine, at: '/letter_opener' if Rails.env.development?
 
   constraints DomainConstraint do
     get '/', to: 'conferences#show'
   end
 
-  if ENV['OSEM_ICHAIN_ENABLED'] == 'true'
+  if ENV.fetch('OSEM_ICHAIN_ENABLED', nil) == 'true'
     devise_for :users, controllers: { registrations: :registrations }
   else
     devise_for :users,
@@ -15,17 +16,13 @@ Osem::Application.routes.draw do
   end
 
   resources :users, except: [:new, :index, :create, :destroy] do
+    collection do
+      get :search
+    end
     resources :openids, only: :destroy
   end
 
   namespace :admin do
-    resources :organizations do
-      member do
-        get :admins
-        post :assign_org_admins
-        delete :unassign_org_admins
-      end
-    end
     resources :users do
       member do
         patch :toggle_confirmation
@@ -37,7 +34,7 @@ Osem::Application.routes.draw do
       resources :surveys do
         resources :survey_questions, except: :index
       end
-      resource :contact, except: [:index, :new, :create, :show, :destroy]
+      resource :contact, except: [:new, :create, :show, :destroy]
       resources :schedules, except: [:edit, :update]
       resources :event_schedules, only: [:create, :update, :destroy]
       get 'commercials/render_commercial' => 'commercials#render_commercial'
@@ -146,11 +143,6 @@ Osem::Application.routes.draw do
     get '/revision_history/:id/revert_object' => 'versions#revert_object', as: 'revision_history_revert_object'
     get '/revision_history/:id/revert_attribute' => 'versions#revert_attribute', as: 'revision_history_revert_attribute'
   end
-  resources :organizations, only: [:index] do
-    member do
-      get :conferences, 'code-of-conduct'
-    end
-  end
   resources :conferences, only: [:index, :show] do
     resources :booths do
       member do
@@ -200,6 +192,10 @@ Osem::Application.routes.draw do
         get :events
       end
     end
+
+    member do
+      get 'code-of-conduct'
+    end
   end
 
   namespace :api, defaults: {format: 'json'} do
@@ -219,8 +215,10 @@ Osem::Application.routes.draw do
 
   get '/admin' => redirect('/admin/conferences')
 
-  unless ENV['OSEM_ROOT_CONFERENCE'].blank?
-    root to: redirect("/conferences/#{ENV['OSEM_ROOT_CONFERENCE']}")
+  get '/calendar' => 'conferences#calendar'
+
+  if ENV.fetch('OSEM_ROOT_CONFERENCE', nil)
+    root to: redirect("/conferences/#{ENV.fetch('OSEM_ROOT_CONFERENCE')}")
   else
     root to: 'conferences#index', via: [:get, :options]
   end

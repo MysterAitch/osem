@@ -4,8 +4,7 @@ require 'spec_helper'
 
 feature 'Has correct abilities' do
 
-  let(:organization) { create(:organization) }
-  let(:conference) { create(:full_conference, organization: organization) }
+  let(:conference) { create(:full_conference) }
   let(:role_cfp) { Role.find_by(name: 'cfp', resource: conference) }
   let(:user_cfp) { create(:user, role_ids: [role_cfp.id]) }
 
@@ -14,16 +13,16 @@ feature 'Has correct abilities' do
       sign_in user_cfp
     end
 
-    scenario 'for organization and conference attributes' do
+    scenario 'for conference attributes' do
       visit admin_conference_path(conference.short_title)
       expect(current_path).to eq(admin_conference_path(conference.short_title))
 
       expect(page).to have_selector('li.nav-header.nav-header-bigger a', text: 'Dashboard')
-      expect(page).to_not have_link('Basics', href: "/admin/conferences/#{conference.short_title}/edit")
+      expect(page).to have_no_link('Basics', href: "/admin/conferences/#{conference.short_title}/edit")
       expect(page).to have_text('Basics')
-      expect(page).to_not have_link('Contact', href: "/admin/conferences/#{conference.short_title}/contact/edit")
+      expect(page).to have_no_link('Contact', href: "/admin/conferences/#{conference.short_title}/contact/edit")
       expect(page).to have_link('Commercials', href: "/admin/conferences/#{conference.short_title}/commercials")
-      expect(page).to_not have_link('Splashpage', href: "/admin/conferences/#{conference.short_title}/splashpage")
+      expect(page).to have_no_link('Splashpage', href: "/admin/conferences/#{conference.short_title}/splashpage")
       expect(page).to have_link('Venue', href: "/admin/conferences/#{conference.short_title}/venue")
       expect(page).to have_link('Rooms', href: "/admin/conferences/#{conference.short_title}/venue/rooms")
       expect(page).to have_link('Program', href: "/admin/conferences/#{conference.short_title}/program")
@@ -34,18 +33,18 @@ feature 'Has correct abilities' do
       expect(page).to have_link('Difficulty Levels', href: "/admin/conferences/#{conference.short_title}/program/difficulty_levels")
       expect(page).to have_link('Schedules', href: "/admin/conferences/#{conference.short_title}/schedules")
       expect(page).to have_link('Reports', href: "/admin/conferences/#{conference.short_title}/program/reports")
-      expect(page).to_not have_link('Registrations', href: "/admin/conferences/#{conference.short_title}/registrations")
-      expect(page).to_not have_link('Questions', href: "/admin/conferences/#{conference.short_title}/questions")
+      expect(page).to have_no_link('Registrations', href: "/admin/conferences/#{conference.short_title}/registrations")
+      expect(page).to have_no_link('Questions', href: "/admin/conferences/#{conference.short_title}/questions")
       expect(page).to have_link('E-Mails', href: "/admin/conferences/#{conference.short_title}/emails")
-      expect(page).to_not have_link('Lodgings', href: "/admin/conferences/#{conference.short_title}/lodgings")
-      expect(page).to_not have_link('Registration Period', href: "/admin/conferences/#{conference.short_title}/registration_period")
-      expect(page).to_not have_text('Donations')
-      expect(page).to_not have_link('Sponsorship Levels', href: "/admin/conferences/#{conference.short_title}/sponsorship_levels")
-      expect(page).to_not have_link('Sponsors', href: "/admin/conferences/#{conference.short_title}/sponsors")
-      expect(page).to_not have_link('Tickets', href: "/admin/conferences/#{conference.short_title}/tickets")
+      expect(page).to have_no_link('Lodgings', href: "/admin/conferences/#{conference.short_title}/lodgings")
+      expect(page).to have_no_link('Registration Period', href: "/admin/conferences/#{conference.short_title}/registration_period")
+      expect(page).to have_no_text('Donations')
+      expect(page).to have_no_link('Sponsorship Levels', href: "/admin/conferences/#{conference.short_title}/sponsorship_levels")
+      expect(page).to have_no_link('Sponsors', href: "/admin/conferences/#{conference.short_title}/sponsors")
+      expect(page).to have_no_link('Tickets', href: "/admin/conferences/#{conference.short_title}/tickets")
       expect(page).to have_link('Roles', href: "/admin/conferences/#{conference.short_title}/roles")
       expect(page).to have_link('Resources', href: "/admin/conferences/#{conference.short_title}/resources")
-      expect(page).to_not have_link('New Conference', href: '/admin/conferences/new')
+      expect(page).to have_no_link('New Conference', href: '/admin/conferences/new')
 
       visit admin_conference_venue_rooms_path(conference.short_title)
       expect(current_path).to eq(admin_conference_venue_rooms_path(conference.short_title))
@@ -168,15 +167,6 @@ feature 'Has correct abilities' do
 
       visit admin_conference_path(conference.short_title)
       expect(current_path).to eq(admin_conference_path(conference.short_title))
-
-      visit admin_organizations_path
-      expect(current_path).to eq(admin_organizations_path)
-
-      visit edit_admin_organization_path(organization)
-      expect(current_path).to eq(root_path)
-
-      visit new_admin_organization_path
-      expect(current_path).to eq(root_path)
 
       visit edit_admin_conference_path(conference.short_title)
       expect(current_path).to eq(root_path)

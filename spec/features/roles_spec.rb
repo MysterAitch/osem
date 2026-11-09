@@ -20,10 +20,9 @@ feature Role do
       click_link('Edit', href: edit_admin_conference_role_path(conference.short_title, role_name))
       fill_in 'role_description', with: 'changed description'
       click_button 'Update Role'
-      role.reload
-      page.find('#flash')
-      expect(flash).to eq("Successfully updated role #{role_name}")
-      expect(role.description).to eq('changed description')
+
+      within('#flash') { expect(page).to have_text("Successfully updated role #{role_name}") }
+      expect(role.reload.description).to eq('changed description')
     end
   end
 
@@ -37,7 +36,7 @@ feature Role do
       visit admin_conference_roles_path(conference.short_title)
     end
     scenario "role #{role_name}" do
-      expect(page.has_link?('Edit', href: edit_admin_conference_role_path(conference.short_title, role_name))).to eq false
+      expect(page.has_link?('Edit', href: edit_admin_conference_role_path(conference.short_title, role_name))).to be false
     end
   end
 
@@ -58,9 +57,11 @@ feature Role do
 
       fill_in 'user_email', with: user_with_no_role.email
       click_button 'Add'
+      page.find('.alert')
+
       user_with_no_role.reload
 
-      expect(user_with_no_role.has_cached_role?(role.name, conference)).to eq true
+      expect(user_with_no_role.has_cached_role?(role.name, conference)).to be true
     end
 
     scenario "removes role #{role_name}", feature: true, js: true do
@@ -72,7 +73,7 @@ feature Role do
       expect(page).to have_css('.alert', text: "Successfully removed role #{role_name} from user #{user_with_role.email}")
       expect(by_role_name).to eq(role_name) | eq('organizer')
       user_with_role.reload
-      expect(user_with_role.has_cached_role?(role_name, conference)).to eq false
+      expect(user_with_role.has_cached_role?(role_name, conference)).to be false
     end
   end
 
@@ -91,59 +92,13 @@ feature Role do
     scenario "add role #{role_name}", feature: true, js: true do
       click_link('Users', href: admin_conference_role_path(conference.short_title, role_name))
 
-      expect(page.has_field?('user_email')).to eq false
+      expect(page.has_field?('user_email')).to be false
     end
 
     scenario "remove role #{role_name}", feature: true, js: true do
       click_link('Users', href: admin_conference_role_path(conference.short_title, role_name))
 
-      expect(first('td').has_css?('.bootstrap-switch-container')).to eq false
-    end
-  end
-
-  context 'organization_admin' do
-    let!(:organization) { create(:organization) }
-    let!(:org_admin_role) { Role.find_by(name: 'organization_admin', resource: organization) }
-    let!(:organization_admin) { create(:user, role_ids: [org_admin_role.id]) }
-    let(:user_with_no_role) { create :user }
-    let!(:other_organization) { create(:organization) }
-
-    before do
-      sign_in organization_admin
-      visit admin_organizations_path
-    end
-
-    context 'for the organization it belongs to' do
-      scenario 'successfully adds role organization_admin' do
-        click_link('Admins', href: admins_admin_organization_path(organization.id))
-
-        fill_in 'user_email', with: user_with_no_role.email
-        click_button 'Add'
-        user_with_no_role.reload
-
-        expect(user_with_no_role.has_cached_role?('organization_admin', organization)).to eq true
-      end
-
-      scenario 'successfully removes role organization_admin' do
-        click_link('Admins', href: admins_admin_organization_path(organization.id))
-
-        first('tr').find('.btn-danger').click
-        organization_admin.reload
-        expect(organization_admin.has_cached_role?('organization_admin', organization)).to eq false
-      end
-    end
-
-    context 'for the organizations it does not belong to' do
-      scenario 'does not successfully add role organization_admin' do
-        click_link('Admins', href: admins_admin_organization_path(other_organization.id))
-
-        expect(page.has_field?('user_email')).to eq false
-      end
-
-      scenario 'does not successfully removes role organization_admin' do
-        click_link('Admins', href: admins_admin_organization_path(other_organization.id))
-        expect(page.has_css?('.btn-danger')).to eq false
-      end
+      expect(first('td').has_css?('.bootstrap-switch-container')).to be false
     end
   end
 

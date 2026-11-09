@@ -3,6 +3,7 @@
 module Admin
   class VolunteersController < Admin::BaseController
     include VolunteersHelper
+
     load_and_authorize_resource :conference, find_by: :short_title
 
     def index
@@ -26,7 +27,7 @@ module Admin
     end
 
     def update
-      if @conference.update_attributes(conference_params)
+      if @conference.update(conference_params)
         redirect_to admin_conference_volunteers_info_path(conference_id: params[:conference_id]), notice: 'Volunteering options were successfully updated.'
       else
         redirect_to admin_conference_volunteers_info_path(conference_id: params[:conference_id]), error: "Volunteering options update failed: #{@conference.errors.full_messages.join '. '}"

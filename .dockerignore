@@ -1,2 +1,9 @@
+.bundle/cache
+.git/
+coverage/
 Dockerfile
 docker-compose.*
+log/
+public/assets/
+public/system/
+tmp/

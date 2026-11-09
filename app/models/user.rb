@@ -7,7 +7,6 @@ class UserDisabled < StandardError
 end
 
 class User < ApplicationRecord
-  rolify
   # prevent N+1 queries with has_cached_role? by preloading roles *always*
   default_scope { preload(:roles) }
 
@@ -17,13 +16,21 @@ class User < ApplicationRecord
       where('ticket_purchases.conference_id = ?', conference)
     end
   end
+  has_many :tickets, through: :ticket_purchases, source: :ticket do
+    def for_registration conference
+      where(conference: conference, registration_ticket: true).first
+    end
+  end
+
   has_many :users_roles
+  rolify
   has_many :roles, through: :users_roles, dependent: :destroy
 
   has_paper_trail on: [:create, :update], ignore: [:sign_in_count, :remember_created_at, :current_sign_in_at, :last_sign_in_at, :current_sign_in_ip, :last_sign_in_ip, :unconfirmed_email,
                                                    :avatar_content_type, :avatar_file_size, :avatar_updated_at, :updated_at, :confirmation_sent_at, :confirmation_token, :reset_password_token]
 
   include Gravtastic
+
   gravtastic size: 32
 
   before_create :setup_role
@@ -38,14 +45,14 @@ class User < ApplicationRecord
     where('last_sign_in_at > ?', Date.today - 3.months).where(is_disabled: false)
   }
   scope :unconfirmed, -> { where('confirmed_at IS NULL') }
-  scope :dead, -> { where('last_sign_in_at < ?', Date.today - 1.year) }
+  scope :dead, -> { where(last_sign_in_at: ...(Date.today - 1.year)) }
 
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable,
   # :lockable, :timeoutable and :omniauthable
   devise_modules = []
 
-  devise_modules += if ENV['OSEM_ICHAIN_ENABLED'] == 'true'
+  devise_modules += if ENV.fetch('OSEM_ICHAIN_ENABLED', nil) == 'true'
                       [:ichain_authenticatable, :ichain_registerable, :omniauthable, omniauth_providers: []]
                     else
                       [:database_authenticatable, :registerable,
@@ -69,11 +76,7 @@ class User < ApplicationRecord
   end
   has_many :events_registrations, through: :registrations
   has_many :payments, dependent: :destroy
-  has_many :tickets, through: :ticket_purchases, source: :ticket do
-    def for_registration conference
-      where(conference: conference, registration_ticket: true).first
-    end
-  end
+
   has_many :votes, dependent: :destroy
   has_many :voted_events, through: :votes, source: :events
   has_many :subscriptions, dependent: :destroy
@@ -99,6 +102,7 @@ class User < ApplicationRecord
             presence:   true
 
   validate :biography_limit
+  validates :affiliation, length: { maximum: 150 }
 
   DISTRIBUTION_COLORS = {
     'Active'      => 'green',
@@ -107,7 +111,7 @@ class User < ApplicationRecord
   }.freeze
 
   ##
-  # Checkes if the user attended the event
+  # Checks if the user attended the event
   # This is used for events that require registration
   # The user must have registered to attend the event
   # Gets an event
@@ -154,9 +158,9 @@ class User < ApplicationRecord
     raise UserDisabled if user&.is_disabled
 
     if user
-      user.update_attributes(email:              attributes[:email],
-                             last_sign_in_at:    user.current_sign_in_at,
-                             current_sign_in_at: Time.current)
+      user.update(email:              attributes[:email],
+                  last_sign_in_at:    user.current_sign_in_at,
+                  current_sign_in_at: Time.current)
     else
       begin
         user = create!(username: username, email: attributes[:email])
@@ -235,8 +239,7 @@ class User < ApplicationRecord
   end
 
   def registered
-    registrations = self.registrations
-    if registrations.count == 0
+    if registrations.none?
       'None'
     else
       registrations.map { |r| r.conference.title }.join ', '
@@ -245,7 +248,7 @@ class User < ApplicationRecord
 
   def attended
     registrations_attended = registrations.where(attended: true)
-    if registrations_attended.count == 0
+    if registrations_attended.none?
       'None'
     else
       registrations_attended.map { |r| r.conference.title }.join ', '
@@ -269,7 +272,7 @@ class User < ApplicationRecord
   end
 
   def self.empty?
-    User.count == 1 && User.first.email == 'deleted@localhost.osem'
+    User.one? && User.first.email == 'deleted@localhost.osem'
   end
 
   private

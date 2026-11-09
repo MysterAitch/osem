@@ -100,9 +100,9 @@ module FormatHelper
 
   def icon_for_todo(bool)
     if bool
-      'fa fa-check'
+      'fa-solid fa-check'
     else
-      'fa fa-times'
+      'fa-solid fa-xmark'
     end
   end
 
@@ -112,16 +112,6 @@ module FormatHelper
     else
       'todolist-missing'
     end
-  end
-
-  def word_pluralize(count, singular, plural = nil)
-    word = if (count == 1 || count =~ /^1(\.0+)?$/)
-             singular
-           else
-             plural || singular.pluralize
-           end
-
-    word
   end
 
   # Returns black or white deppending on what of them contrast more with the
@@ -190,13 +180,19 @@ module FormatHelper
   def markdown(text, escape_html=true)
     return '' if text.nil?
 
-    options = {
-      autolink:            true,
-      space_after_headers: true,
-      no_intra_emphasis:   true
+    markdown_options = {
+      autolink:                     true,
+      space_after_headers:          true,
+      no_intra_emphasis:            true,
+      fenced_code_blocks:           true,
+      disable_indented_code_blocks: true
     }
-    markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(escape_html: escape_html), options)
-    markdown.render(text).html_safe
+    render_options = {
+      escape_html:     escape_html,
+      safe_links_only: true
+    }
+    markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(render_options), markdown_options)
+    sanitize(sanitize(markdown.render(text)), scrubber: Loofah::Scrubbers::NoFollow.new)
   end
 
   def markdown_hint(text='')

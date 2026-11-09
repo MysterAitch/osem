@@ -1,31 +1,41 @@
-require: rubocop-rspec
+plugins:
+  - rubocop-rspec
+  - rubocop-rspec_rails
+  - rubocop-rails
+  - rubocop-capybara
+  - rubocop-performance
+  - rubocop-factory_bot
 
 inherit_from: .rubocop_todo.yml
+
+inherit_mode:
+  merge:
+    - Exclude
 
 AllCops:
   UseCache: true
   CacheRootDirectory: tmp/rubocop_cache_rails_dir
   MaxFilesInCache: 4000
+  NewCops: enable
 
 #################### Style ###########################
+
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
+
+Style/StringLiterals:
+  Exclude:
+    - "config/**/*"
 
 ##################### Metrics ##################################
 
 ##################### Rails ##################################
 
-Rails:
-  Enabled: true
-
 ##################### RSpec ##################################
-
-FactoryBot/AttributeDefinedStatically:
-  Enabled: true
 
 RSpec/DescribeClass:
   Exclude:
     - "spec/views/**/*"
     - "spec/ability/*"
 
-Layout/AlignHash:
-  EnforcedHashRocketStyle: table
-  EnforcedColonStyle: table

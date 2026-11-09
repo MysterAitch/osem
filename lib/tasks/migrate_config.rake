@@ -28,13 +28,12 @@ namespace :data do
       dot_env.puts "OSEM_ICHAIN_ENABLED=\"#{CONFIG['authentication']['ichain']['enabled']}\"" if CONFIG.has_key?(:authentication)
       dot_env.puts "OSEM_TRANSIFEX_APIKEY=\"#{CONFIG['transifex_live_api_key']}\""
       dot_env.puts "OSEM_ERRBIT_HOST=\"#{CONFIG['errbit_host']}\""
-      dot_env.puts "OSEM_FACTORY_LINT=\"#{CONFIG['factory_bot_lint']}\""
       dot_env.puts "OSEM_SMTP_ADDRESS=\"#{CONFIG['mail_address']}\""
       dot_env.puts "OSEM_SMTP_PORT=\"#{CONFIG['mail_port']}\""
       dot_env.puts "OSEM_SMTP_USERNAME=\"#{CONFIG['mail_username']}\""
       dot_env.puts "OSEM_SMTP_PASSWORD=\"#{CONFIG['mail_password']}\""
       dot_env.puts "OSEM_SMTP_AUTHENTICATION=\"#{CONFIG['mail_authentication']}\""
-      dot_env.puts 'OSEM_SMTP_DOMAIN=""'
+      dot_env.puts '# OSEM_SMTP_DOMAIN="example.com"'
       dot_env.close
 
       puts "Migrated config/config.yml to .env.#{Rails.env}"

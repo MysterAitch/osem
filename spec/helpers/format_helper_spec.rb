@@ -9,12 +9,25 @@ describe FormatHelper, type: :helper do
       expect(markdown(nil)).to eq ''
     end
 
-    it 'should return HTML for header markdown' do
-      expect(Redcarpet::Markdown).to receive(:new)
-      .with(Redcarpet::Render::HTML, autolink: true, space_after_headers: true, no_intra_emphasis: true)
-      .and_call_original
+    it "doesn't render links with unsafe URI schemes" do
+      expect(markdown('[a](javascript:b)')).to eq "<p>[a](javascript:b)</p>\n"
+    end
 
+    it 'should return HTML for header markdown' do
       expect(markdown('# this is my header')).to eq "<h1>this is my header</h1>\n"
+    end
+
+    it 'escapes input HTML' do
+      expect(markdown('<em>*a*</em>')).to eq "<p>&lt;em&gt;<em>a</em>&lt;/em&gt;</p>\n"
+    end
+
+    it 'removes unallowed elements' do
+      expect(markdown('<em>*<style>a</style>*</em>', false)).to eq "<p><em><em>a</em></em></p>\n"
+    end
+
+    it 'sets nofollow on links' do
+      expect(markdown('[a](https://example.com/)'))
+        .to eq "<p><a href=\"https://example.com/\" rel=\"nofollow\">a</a></p>\n"
     end
   end
 end

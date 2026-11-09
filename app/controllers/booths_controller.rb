@@ -36,7 +36,7 @@ class BoothsController < ApplicationController
 
   def update
     @url = conference_booth_path(@conference.short_title, @booth.id)
-    @booth.update_attributes(booth_params)
+    @booth.update(booth_params)
 
     if @booth.save
       redirect_to conference_booths_path,
@@ -94,7 +94,6 @@ class BoothsController < ApplicationController
   private
 
   def booth_params
-    params.require(:booth).permit(:title, :description, :reasoning, :state, :picture, :conference_id,
-                                  :created_at, :updated_at, :submitter_relationship, :website_url, responsible_ids: [])
+    params.require(:booth).permit(:title, :description, :reasoning, :picture, :website_url, :submitter_relationship, responsible_ids: [])
   end
 end
